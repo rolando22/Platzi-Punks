@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
+    "dotenv": "^16.0.0",
     "hardhat": "^2.9.3"
   },
   "dependencies": {
