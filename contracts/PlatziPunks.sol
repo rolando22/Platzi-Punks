@@ -6,13 +6,15 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./Base64.sol";
+import "./PlatziPunksDNA.sol";
 
-contract PlatziPunks is ERC721, ERC721Enumerable {
+contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
 
     using Counters for Counters.Counter;
     Counters.Counter private _idCounter;
     uint256 public maxSupply;
     address payable public owner;
+    mapping(uint256 => uint256) public tokenDNA;
 
     constructor(uint256 _maxSupply) ERC721("PlatziPunk", "PLPKS") {
         maxSupply = _maxSupply;
@@ -22,9 +24,52 @@ contract PlatziPunks is ERC721, ERC721Enumerable {
     function mint() public payable {
         require(_idCounter.current() < maxSupply, "No PlatziPunks left");
         require(msg.value >= 50000000000000000,"you neet 0.05 ETH to mint the PlatziPunks");
+        tokenDNA[_idCounter.current()] = deterministicPseudoRandomDNA(_idCounter.current(), msg.sender);
         _safeMint(msg.sender, _idCounter.current());
         owner.transfer(msg.value);
         _idCounter.increment();
+    }
+
+    function _baseURI() internal pure override returns(string memory) {
+        return "https://avataaars.io/";
+    }
+
+    function _paramsURI(uint256 _dna) internal view returns(string memory) {
+        string memory params;
+        {
+            params = string(abi.encodePacked(
+                "accessoriesType=",
+                getAccessoriesType(_dna),
+                "&clotheColor=",
+                getClotheColor(_dna),
+                "&clotheType",
+                getClotheType(_dna),
+                "&eyeType",
+                getEyeType(_dna),
+                "&eyebrowType",
+                getEyebrowType(_dna),
+                "&facialHairColor",
+                getFacialHairColor(_dna),
+                "&facialHairType",
+                getFacialHairType(_dna),
+                "&hairColor",
+                getHairColor(_dna),
+                "&hatColor",
+                getHatColor(_dna),
+                "&graphicType",
+                getGraphicType(_dna),
+                "&mouthType",
+                getMouthType(_dna),
+                "&skinColor",
+                getSkinColor(_dna)
+                
+            ));
+        }
+        return string(abi.encodePacked(params, "&topType", getTopType(_dna)));
+    }
+
+    function imageByDNA(uint256 _dna) public view returns(string memory) {
+        return string(abi.encodePacked(_baseURI(), "?", _paramsURI(_dna)));
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
@@ -34,11 +79,11 @@ contract PlatziPunks is ERC721, ERC721Enumerable {
                 '{"name": "Platzi Punks #',
                 tokenId,
                 '", "description": "Platzi Punks are randomized Avataaars stored on chain to teach DApp development on Platzi", "imagen": "',
-                "//TODO: Calculate imagen URL",
+                imageByDNA(tokenDNA[tokenId]),
                 '"}'
             )
         );
-        return string(abi.encode("data:application/json;base64,", jsonURI));
+        return string(abi.encodePacked("data:application/json;base64,", jsonURI));
     }
 
     //Override require
