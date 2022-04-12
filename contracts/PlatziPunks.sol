@@ -5,12 +5,14 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./Base64.sol";
 import "./PlatziPunksDNA.sol";
 
 contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
 
     using Counters for Counters.Counter;
+    using Strings for uint256;
     Counters.Counter private _idCounter;
     uint256 public maxSupply;
     address payable public owner;
@@ -21,12 +23,12 @@ contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
         owner = payable(msg.sender);
     }
 
-    function mint() public payable {
+    function mint() public {
         require(_idCounter.current() < maxSupply, "No PlatziPunks left");
-        require(msg.value >= 50000000000000000,"you neet 0.05 ETH to mint the PlatziPunks");
+    //    require(msg.value >= 50000000000000000,"you neet 0.05 ETH to mint the PlatziPunks");
         tokenDNA[_idCounter.current()] = deterministicPseudoRandomDNA(_idCounter.current(), msg.sender);
         _safeMint(msg.sender, _idCounter.current());
-        owner.transfer(msg.value);
+    //    owner.transfer(msg.value);
         _idCounter.increment();
     }
 
@@ -77,8 +79,8 @@ contract PlatziPunks is ERC721, ERC721Enumerable, PlatziPunksDNA {
         string memory jsonURI = Base64.encode(
             abi.encodePacked(
                 '{"name": "Platzi Punks #',
-                tokenId,
-                '", "description": "Platzi Punks are randomized Avataaars stored on chain to teach DApp development on Platzi", "imagen": "',
+                tokenId.toString(),
+                '", "description": "Platzi Punks are randomized Avataaars stored on chain to teach DApp development on Platzi", "image": "',
                 imageByDNA(tokenDNA[tokenId]),
                 '"}'
             )
